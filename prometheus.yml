@@ -1,0 +1,125 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    monitor: observability-stack
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  # Host-level metrics via Node Exporter
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # Scrape the OTel Collector's Prometheus exporter (pipeline metrics, otel_* prefix)
+  - job_name: otel-collector
+    static_configs:
+      - targets: ["otel-collector:8889"]
+
+  # Scrape the OTel Collector's internal self-telemetry (otelcol_* prefix)
+  - job_name: otel-collector-internal
+    static_configs:
+      - targets: ["otel-collector:8888"]
+
+  # Self-monitoring for the observability stack's own components.
+  # These run on the observability network but carry no obs.* labels, so the
+  # docker_sd job below never discovers them — scrape them statically.
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]
+  - job_name: jaeger
+    static_configs:
+      - targets: ["jaeger:8888"]
+  - job_name: grafana
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["grafana:3003"]   # Keep aligned with GRAFANA_PORT
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Auto-discover containers with obs.scrape=true label
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 30s
+        filters:
+          - name: network
+            values: [observability]
+    relabel_configs:
+      # Only scrape containers that opt in
+      - source_labels: [__meta_docker_container_label_obs_scrape]
+        regex: "true"
+        action: keep
+
+      # Set job label from obs.service.name
+      - source_labels: [__meta_docker_container_label_obs_service_name]
+        target_label: job
+
+      # Set namespace label from obs.service.namespace
+      - source_labels: [__meta_docker_container_label_obs_service_namespace]
+        target_label: namespace
+
+      # Rewrite __address__ using obs.scrape.port (default: 8080)
+      - source_labels: [__address__, __meta_docker_container_label_obs_scrape_port]
+        regex: "([^:]+)(?::\\d+)?;(\\d+)"
+        replacement: "$1:$2"
+        target_label: __address__
+
+      # Use obs.scrape.path for metrics path (default: /metrics)
+      - source_labels: [__meta_docker_container_label_obs_scrape_path]
+        regex: (.+)
+        target_label: __metrics_path__
+
+      # Preserve container name for debugging
+      - source_labels: [__meta_docker_container_name]
+        regex: "/(.*)"
+        target_label: container
+
+  # Blackbox HTTP probing — discover containers with obs.health.path set
+  - job_name: blackbox
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 30s
+        filters:
+          - name: network
+            values: [observability]
+    relabel_configs:
+      # Only probe containers that opt in with obs.health.path
+      - source_labels: [__meta_docker_container_label_obs_health_path]
+        regex: (.+)
+        action: keep
+
+      # Build probe URL using container name (Docker DNS) so blackbox-exporter
+      # resolves via the shared observability network, not the container's
+      # primary IP (which may be on a different, unreachable network).
+      - source_labels: [__meta_docker_container_name, __meta_docker_container_label_obs_health_port]
+        regex: '/([^;]+);(\d+)'
+        replacement: 'http://$1:$2'
+        target_label: __param_target
+
+      # Append the health path
+      - source_labels: [__param_target, __meta_docker_container_label_obs_health_path]
+        regex: '(.+);(.+)'
+        replacement: '$1$2'
+        target_label: __param_target
+
+      # Route all probes through the blackbox exporter
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+      # Copy probe URL to instance label for display
+      - source_labels: [__param_target]
+        target_label: instance
+
+      # Add namespace and job labels for dashboard filtering
+      - source_labels: [__meta_docker_container_label_obs_service_namespace]
+        target_label: namespace
+
+      - source_labels: [__meta_docker_container_label_obs_service_name]
+        target_label: job

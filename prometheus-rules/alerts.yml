@@ -1,0 +1,88 @@
+# Alert rules. Delivered by e-mail by obs-alert-mailer (host systemd timer on
+# hub, uses the host msmtp relay) — see alerting/README.md.
+groups:
+  - name: uptime
+    rules:
+      - alert: SiteDown
+        expr: probe_success{job=~"blackbox-public|blackbox-tailnet"} == 0
+        for: 3m
+        labels: {severity: critical}
+        annotations:
+          summary: "{{ $labels.project }} is DOWN: {{ $labels.instance }}"
+          description: "Probe failing for 3m (HTTP {{ with printf `probe_http_status_code{instance=\"%s\"}` $labels.instance | query }}{{ . | first | value }}{{ end }})."
+      - alert: Site5xx
+        expr: probe_http_status_code{job=~"blackbox-public|blackbox-tailnet"} >= 500
+        for: 3m
+        labels: {severity: critical}
+        annotations:
+          summary: "{{ $labels.project }} returns HTTP {{ $value }}: {{ $labels.instance }}"
+      - alert: SiteSlow
+        expr: probe_duration_seconds{job="blackbox-public"} > 5
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "{{ $labels.project }} slow ({{ $value | humanizeDuration }}): {{ $labels.instance }}"
+      - alert: TLSCertExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry{job="blackbox-public"} - time()) / 86400 < 14
+        for: 1h
+        labels: {severity: warning}
+        annotations:
+          summary: "TLS cert for {{ $labels.instance }} expires in {{ $value | humanize }} days"
+
+  - name: hosts
+    rules:
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs|fuse.*",mountpoint!~"/mnt/.*"}
+            / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs|fuse.*",mountpoint!~"/mnt/.*"}) < 0.10
+        for: 10m
+        labels: {severity: critical}
+        annotations:
+          summary: "Disk {{ $labels.mountpoint }} on {{ $labels.instance }} under 10% free"
+      - alert: DiskWillFillIn24h
+        expr: |
+          predict_linear(node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs|fuse.*",mountpoint!~"/mnt/.*"}[6h], 86400) < 0
+        for: 30m
+        labels: {severity: warning}
+        annotations:
+          summary: "Disk {{ $labels.mountpoint }} on {{ $labels.instance }} predicted full within 24h"
+      - alert: MemoryLow
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
+        for: 10m
+        labels: {severity: critical}
+        annotations:
+          summary: "Memory on {{ $labels.instance }} under 10% available"
+      - alert: RaidDegraded
+        expr: node_md_disks{state="failed"} > 0 or (node_md_disks_required - node_md_disks{state="active"}) > 0
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: "RAID {{ $labels.device }} degraded on {{ $labels.instance }}"
+      - alert: HostMetricsMissing
+        expr: up{job=~"node|node-prod"} == 0
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "No host metrics from {{ $labels.job }} ({{ $labels.instance }})"
+
+  - name: containers
+    rules:
+      - alert: ContainerRestartLoop
+        expr: increase(otel_container_restarts_total[15m]) > 3
+        labels: {severity: critical}
+        annotations:
+          summary: "{{ $labels.container_name }} ({{ $labels.deployment_environment }}) restarted {{ $value | humanize }}x in 15m"
+      - alert: ContainerMemoryNearLimit
+        expr: otel_container_memory_percent_ratio > 90
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "{{ $labels.container_name }} ({{ $labels.deployment_environment }}) at {{ $value | humanize }}% of its memory limit"
+      - alert: TelemetrySatelliteSilent
+        expr: |
+          absent_over_time(otel_container_uptime_seconds{deployment_environment="apps"}[10m])
+          or absent_over_time(otel_container_uptime_seconds{deployment_environment="staging"}[10m])
+          or absent_over_time(otel_container_uptime_seconds{deployment_environment="hub-dev"}[10m])
+        labels: {severity: warning}
+        annotations:
+          summary: "A telemetry satellite stopped reporting (logs/metrics for a hub user are missing)"

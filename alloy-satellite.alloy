@@ -1,0 +1,72 @@
+// Container log shipper for one Docker daemon (one per hub user, and prod).
+// Reads every container's logs through the Docker API (exactly one stream per
+// container, so no duplicates for multi-port / multi-network containers — the
+// problem the old receiver_creator approach had) and pushes them, Loki-style,
+// to the satellite otel-collector next to it, which forwards over OTLP.
+
+discovery.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "30s"
+}
+
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/?(.*)"
+    target_label  = "container"
+  }
+  // service_namespace: obs.service.namespace label > compose project > container
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/?(.*)"
+    target_label  = "service_namespace"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    regex         = "(.+)"
+    target_label  = "service_namespace"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_obs_service_namespace"]
+    regex         = "(.+)"
+    target_label  = "service_namespace"
+  }
+  // service_name: obs.service.name > compose service > container
+  rule {
+    source_labels = ["container"]
+    target_label  = "service_name"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    regex         = "(.+)"
+    target_label  = "service_name"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_obs_service_name"]
+    regex         = "(.+)"
+    target_label  = "service_name"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_log_stream"]
+    target_label  = "stream"
+  }
+}
+
+loki.source.docker "containers" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.docker.containers.targets
+  relabel_rules = discovery.relabel.containers.rules
+  labels        = {
+    host_name              = sys.env("SAT_HOST"),
+    deployment_environment = sys.env("SAT_ENV"),
+  }
+  forward_to    = [loki.write.satellite.receiver]
+}
+
+loki.write "satellite" {
+  endpoint {
+    url = "http://otel-collector:3500/loki/api/v1/push"
+  }
+}

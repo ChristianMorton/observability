@@ -1,0 +1,7 @@
+stages: [validate]
+validate:
+  image: python:3.12-slim
+  stage: validate
+  script:
+    - python -m pip install PyYAML
+    - python scripts/validate.py

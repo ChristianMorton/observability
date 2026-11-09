@@ -1,0 +1,427 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "description": "HTTP health probe results for all services with obs.health.path label",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Summary",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "value" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "count(probe_success{project=~\"$namespace\", job=~\"$service\"})",
+          "instant": true,
+          "legendFormat": "Total",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Targets",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "count(probe_success{project=~\"$namespace\", job=~\"$service\"} == 1) or vector(0)",
+          "instant": true,
+          "legendFormat": "Healthy",
+          "refId": "A"
+        }
+      ],
+      "title": "Healthy",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "count(probe_success{project=~\"$namespace\", job=~\"$service\"} == 0) or vector(0)",
+          "instant": true,
+          "legendFormat": "Down",
+          "refId": "A"
+        }
+      ],
+      "title": "Down",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 2000 }]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 5,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "avg(probe_duration_seconds{project=~\"$namespace\", job=~\"$service\"}) * 1000",
+          "instant": true,
+          "legendFormat": "Avg Response",
+          "refId": "A"
+        }
+      ],
+      "title": "Avg Response Time",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 90 }, { "color": "green", "value": 99 }]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 6,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "avg(avg_over_time(probe_success{project=~\"$namespace\", job=~\"$service\"}[1h])) * 100",
+          "instant": true,
+          "legendFormat": "Uptime (1h)",
+          "refId": "A"
+        }
+      ],
+      "title": "Avg Uptime (1h)",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 10,
+      "title": "Service Status",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "displayMode": "auto" },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Up" },
+            "properties": [
+              { "id": "custom.displayMode", "value": "color-background" },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } },
+              { "id": "mappings", "value": [{ "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "UP" } }, "type": "value" }] },
+              { "id": "custom.width", "value": 100 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Response (s)" },
+            "properties": [
+              { "id": "unit", "value": "s" },
+              { "id": "decimals", "value": 3 },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 2 }] } },
+              { "id": "custom.displayMode", "value": "color-background" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "HTTP Status" },
+            "properties": [
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 200 }, { "color": "yellow", "value": 300 }, { "color": "red", "value": 400 }] } },
+              { "id": "custom.displayMode", "value": "color-background" },
+              { "id": "custom.width", "value": 120 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Service" },
+            "properties": [{ "id": "custom.width", "value": 160 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Namespace" },
+            "properties": [{ "id": "custom.width", "value": 140 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Endpoint" },
+            "properties": [{ "id": "custom.width", "value": 280 }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 },
+      "id": 11,
+      "options": {
+        "sortBy": [{ "displayName": "Up", "desc": false }],
+        "footer": { "show": false }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "probe_success{project=~\"$namespace\", job=~\"$service\"}",
+          "instant": true,
+          "format": "table",
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "probe_duration_seconds{project=~\"$namespace\", job=~\"$service\"}",
+          "instant": true,
+          "format": "table",
+          "legendFormat": "",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "probe_http_status_code{project=~\"$namespace\", job=~\"$service\"}",
+          "instant": true,
+          "format": "table",
+          "legendFormat": "",
+          "refId": "C"
+        }
+      ],
+      "title": "All Services",
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true },
+            "renameByName": {
+              "Value #A": "Up",
+              "Value #B": "Response (s)",
+              "Value #C": "HTTP Status",
+              "job": "Service",
+              "namespace": "Namespace",
+              "instance": "Endpoint"
+            },
+            "indexByName": {
+              "Namespace": 0,
+              "Service": 1,
+              "Up": 2,
+              "HTTP Status": 3,
+              "Response (s)": 4,
+              "Endpoint": 5
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 20,
+      "title": "Response Times",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 5 },
+          "unit": "s",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 2 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 15 },
+      "id": 21,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "last"], "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "probe_duration_seconds{project=~\"$namespace\", job=~\"$service\"}",
+          "legendFormat": "{{namespace}}/{{job}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Probe Duration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 5 },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 },
+      "id": 22,
+      "options": {
+        "legend": { "calcs": ["last"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "probe_success{project=~\"$namespace\", job=~\"$service\"}",
+          "legendFormat": "{{namespace}}/{{job}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Probe Success (1=up, 0=down)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 30,
+      "title": "24h Uptime",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 90 }, { "color": "green", "value": 99 }]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
+      "id": 31,
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showUnfilled": true,
+        "displayMode": "gradient"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "avg_over_time(probe_success{project=~\"$namespace\", job=~\"$service\"}[24h]) * 100",
+          "instant": true,
+          "legendFormat": "{{namespace}}/{{job}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Uptime % (24h rolling)",
+      "type": "bargauge"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["observability", "health", "blackbox"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": { "value": ["$__all"] },
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "definition": "label_values(probe_success, project)",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": ".+",
+        "label": "Namespace",
+        "multi": true,
+        "name": "namespace",
+        "options": [],
+        "query": "label_values(probe_success, project)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": { "value": ["$__all"] },
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "definition": "label_values(probe_success{project=~\"$namespace\"}, job)",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": ".+",
+        "label": "Service",
+        "multi": true,
+        "name": "service",
+        "options": [],
+        "query": "label_values(probe_success{project=~\"$namespace\"}, job)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Observability — Service Health",
+  "uid": "obs-health",
+  "version": 1
+}

@@ -1,0 +1,12 @@
+services:
+  grafana-preview:
+    image: grafana/grafana:11.3.1
+    ports: ["127.0.0.1:43300:3000"]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - .:/demo:ro
+      - ./datasources.yml:/etc/grafana/provisioning/datasources/demo.yml:ro
+      - ./provider.yml:/etc/grafana/provisioning/dashboards/demo.yml:ro

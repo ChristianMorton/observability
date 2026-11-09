@@ -1,0 +1,86 @@
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: warn
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki/data
+  storage:
+    filesystem:
+      chunks_directory: /loki/data/chunks
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+query_range:
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 256
+  # Cache index-stats / volume / series lookups too.
+  cache_results: true
+
+schema_config:
+  configs:
+    - from: "2024-05-01"
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  # Ingestion: the old 4 MB/s default rejected hourly bursts from prod with
+  # 429 "ingestion rate limit exceeded" (about a quarter of all lines).
+  ingestion_rate_mb: 16
+  ingestion_burst_size_mb: 32
+  per_stream_rate_limit: 8MB
+  per_stream_rate_limit_burst: 32MB
+  # Queries: dashboards that fan out across every namespace hit the 500
+  # default; split long ranges so they parallelise and cache well.
+  max_query_series: 5000
+  split_queries_by_interval: 1h
+  max_query_parallelism: 16
+  query_timeout: 2m
+  retention_period: 336h  # 14 days
+  allow_structured_metadata: true
+  volume_enabled: true
+  # Explicitly promote service.name and service.namespace from OTLP resource
+  # attributes to Loki stream labels so they are indexable and filterable
+  # with {service_namespace="..."} in LogQL.
+  otlp_config:
+    resource_attributes:
+      attributes_config:
+        - action: index_label
+          attributes:
+            - service.name
+            - service.namespace
+
+compactor:
+  working_directory: /loki/data/compactor
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
+  delete_request_store: filesystem
+
+ruler:
+  storage:
+    type: local
+    local:
+      directory: /tmp/loki-rules
+
+querier:
+  max_concurrent: 8
+
+frontend:
+  encoding: protobuf
+
+analytics:
+  reporting_enabled: false

@@ -1,0 +1,883 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": {
+    "list": []
+  },
+  "description": "Portfolio component preview using Grafana TestData. Synthetic values; not live service telemetry.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 999,
+      "type": "text",
+      "title": "About this preview",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**SYNTHETIC TELEMETRY** \u00b7 Real repository dashboard rendered in Grafana with its TestData source. No production hosts, logs or account data."
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "id": 1,
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 3
+      },
+      "id": 2,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 260000,
+          "max": 260100,
+          "spread": 0.01,
+          "startValue": 260000
+        }
+      ],
+      "title": "Collector Uptime",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 4,
+        "y": 3
+      },
+      "id": 3,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 0,
+          "max": 100,
+          "spread": 3,
+          "startValue": 30
+        }
+      ],
+      "title": "Received Spans/sec",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 9,
+        "y": 3
+      },
+      "id": 4,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 0,
+          "max": 100,
+          "spread": 3,
+          "startValue": 30
+        }
+      ],
+      "title": "Received Log Records/sec",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 14,
+        "y": 3
+      },
+      "id": 5,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 0,
+          "max": 100,
+          "spread": 3,
+          "startValue": 30
+        }
+      ],
+      "title": "Exporter Queue Depth",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 19,
+        "y": 3
+      },
+      "id": 6,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 0,
+          "max": 0,
+          "spread": 0,
+          "startValue": 0
+        }
+      ],
+      "title": "Dropped Signals (5m)",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 10,
+      "title": "Signal Flow \u2014 Received vs Exported",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 5
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*failed.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 8
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 0,
+          "max": 100,
+          "spread": 3,
+          "startValue": 30
+        }
+      ],
+      "title": "Spans",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 5
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*failed.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 8
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 0,
+          "max": 100,
+          "spread": 3,
+          "startValue": 30
+        }
+      ],
+      "title": "Log Records",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 5
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*failed.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 8
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 0,
+          "max": 100,
+          "spread": 3,
+          "startValue": 30
+        }
+      ],
+      "title": "Metric Points",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 20,
+      "title": "Queue & Drops",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 21,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 0,
+          "max": 100,
+          "spread": 3,
+          "startValue": 30
+        }
+      ],
+      "title": "Exporter Queue Size vs Capacity",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 0,
+          "max": 0,
+          "spread": 0,
+          "startValue": 0
+        }
+      ],
+      "title": "Dropped Signals Rate",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 30,
+      "title": "Process Health",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          },
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "id": 31,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 1000000000.0,
+          "max": 8000000000.0,
+          "spread": 100000000.0,
+          "startValue": 4000000000.0
+        }
+      ],
+      "title": "Process Memory (RSS)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "portfolio-testdata"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          },
+          "unit": "percentunit",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
+      "id": 32,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "portfolio-testdata"
+          },
+          "scenarioId": "random_walk",
+          "alias": "Synthetic sample",
+          "seriesCount": 1,
+          "min": 0.1,
+          "max": 0.55,
+          "spread": 0.01,
+          "startValue": 0.3
+        }
+      ],
+      "title": "CPU Usage",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "tags": [
+    "observability",
+    "otelcol",
+    "internal"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Observability \u2014 OTel Collector \u00b7 Synthetic preview",
+  "uid": "demo-obs-collector",
+  "version": 1
+}

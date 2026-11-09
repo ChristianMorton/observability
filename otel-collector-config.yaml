@@ -1,0 +1,167 @@
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  zpages:
+    endpoint: 0.0.0.0:55679
+  # Persists file read offsets so OTel restarts don't re-ingest old logs.
+  file_storage:
+    directory: /var/lib/otelcol/file_storage
+    timeout: 10s
+  # Watches the Docker daemon for containers with obs.* labels.
+  # use_hostname_if_present: false ensures we use container ID, not hostname.
+  docker_observer:
+    endpoint: unix:///var/run/docker.sock
+    timeout: 5s
+    cache_sync_interval: 30s
+    excluded_images:
+      - otel/opentelemetry-collector-contrib
+
+receivers:
+  # Accepts OTLP pushes from instrumented apps (traces, metrics, logs)
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Dynamically creates a file_log receiver for every container that
+  # has obs.service.namespace set, attaching service.name and
+  # service.namespace as resource attributes from the Docker labels.
+  receiver_creator:
+    watch_observers: [docker_observer]
+    receivers:
+      file_log:
+        # Match any endpoint (port or portless) from a container with our label.
+        # We deduplicate by filtering to port==0 (portless endpoint) OR the
+        # lowest port, but the simplest correct approach is to match on the
+        # container-level endpoint only (type=="container" with no port filter).
+        rule: type == "container" && labels["obs.service.namespace"] != ""
+        # resource_attributes is applied to every log record produced by this
+        # receiver — this is the correct field (not config.resource).
+        resource_attributes:
+          service.name: '`labels["obs.service.name"]`'
+          service.namespace: '`labels["obs.service.namespace"]`'
+        config:
+          storage: file_storage
+          include:
+            - '/var/lib/docker/containers/`container_id`/*.log'
+          # Tail from the end of each file. Persisted offsets (file_storage)
+          # resume mid-file across restarts; only the very first time a file is
+          # seen do we start here. Using `beginning` re-ingests entire log
+          # files whenever the offset volume is reset, shipping week-old lines
+          # that Loki rejects (greater_than_max_sample_age / too_far_behind).
+          start_at: end
+          include_file_path: true
+          include_file_name: false
+          operators:
+            - type: json_parser
+              id: parse_docker_json
+              on_error: send_quiet
+              timestamp:
+                parse_from: attributes.time
+                layout: "%Y-%m-%dT%H:%M:%S.%LZ"
+            - type: move
+              from: attributes.log
+              to: body
+              if: 'attributes.log != nil'
+            - type: remove
+              field: attributes.time
+              if: 'attributes.time != nil'
+            - type: remove
+              field: attributes.__error__
+              if: 'attributes.__error__ != nil'
+            - type: remove
+              field: attributes.__error_details__
+              if: 'attributes.__error_details__ != nil'
+
+processors:
+  # Drop logs from unnamed one-off containers (Docker random names like
+  # "vibrant_hodgkin", where satellites fall back to the container name for
+  # both service.name and service.namespace). On prod an hourly one-off
+  # container writes ~190 MB of binary to stdout each run, which blew the
+  # Loki ingestion limit and created a new stream set every hour.
+  filter/unnamed-containers:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'IsMatch(resource.attributes["service.namespace"], "^[a-z]+_[a-z]+$") and resource.attributes["service.namespace"] == resource.attributes["service.name"]'
+
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+  # For OTLP-pushed data: map obs.* resource attributes to standard
+  # OTel service.name / service.namespace if apps set them that way.
+  transform/labels:
+    error_mode: ignore
+    log_statements:
+      - context: resource
+        statements:
+          - set(resource.attributes["service.name"], resource.attributes["obs.service.name"]) where resource.attributes["obs.service.name"] != nil
+          - set(resource.attributes["service.namespace"], resource.attributes["obs.service.namespace"]) where resource.attributes["obs.service.namespace"] != nil
+      - context: log
+        statements:
+          - delete_key(attributes, "__error__")
+          - delete_key(attributes, "__error_details__")
+    metric_statements:
+      - context: resource
+        statements:
+          - set(resource.attributes["service.name"], resource.attributes["obs.service.name"]) where resource.attributes["obs.service.name"] != nil
+          - set(resource.attributes["service.namespace"], resource.attributes["obs.service.namespace"]) where resource.attributes["obs.service.namespace"] != nil
+    trace_statements:
+      - context: resource
+        statements:
+          - set(resource.attributes["service.name"], resource.attributes["obs.service.name"]) where resource.attributes["obs.service.name"] != nil
+          - set(resource.attributes["service.namespace"], resource.attributes["obs.service.namespace"]) where resource.attributes["obs.service.namespace"] != nil
+
+exporters:
+  otlp_http/loki:
+    endpoint: http://loki:3100/otlp
+    tls:
+      insecure: true
+
+  otlp_http/jaeger:
+    endpoint: http://jaeger:4318
+
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: otel
+    send_timestamps: true
+    resource_to_telemetry_conversion:
+      enabled: true
+
+  debug:
+    verbosity: basic
+
+service:
+  telemetry:
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+  extensions: [health_check, zpages, file_storage, docker_observer]
+
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/labels, batch]
+      exporters: [otlp_http/jaeger]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/labels, batch]
+      exporters: [prometheus]
+
+    logs:
+      receivers: [otlp, receiver_creator]
+      processors: [memory_limiter, transform/labels, filter/unnamed-containers, batch]
+      exporters: [otlp_http/loki]

@@ -1,0 +1,21 @@
+modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: []   # defaults to 2xx
+      method: GET
+      follow_redirects: true
+      preferred_ip_protocol: "ip4"
+
+  # "Is it up?": any non-5xx answer counts (some hosts answer 401/404 at /).
+  http_up:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 202, 204, 301, 302, 303, 307, 308, 400, 401, 403, 404, 405, 406]
+      method: GET
+      follow_redirects: false
+      preferred_ip_protocol: "ip4"

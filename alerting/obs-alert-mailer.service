@@ -1,0 +1,8 @@
+[Unit]
+Description=Mail Prometheus alerts via msmtp
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/default/obs-alert-mailer
+ExecStart=/usr/local/bin/obs-alert-mailer

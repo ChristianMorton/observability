@@ -1,0 +1,392 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "description": "Log and trace investigation for a single project — filter by namespace, service, search term, and log level",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Summary — $namespace",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 0, "y": 1 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "orientation": "auto", "textMode": "auto", "colorMode": "value" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+        "expr": "sum(count_over_time({service_namespace=~\"$namespace\", service_name=~\"$service\"} |= \"$search\" [$__range]))",
+        "legendFormat": "Total",
+        "refId": "A"
+      }],
+      "title": "Total Logs",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 100 }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 4, "y": 1 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+        "expr": "sum(count_over_time({service_namespace=~\"$namespace\", service_name=~\"$service\"} |~ \"(?i)\\\\berror\\\\b|\\\\bfatal\\\\b|\\\\bexception\\\\b|\\\\bpanic\\\\b\" [$__range]))",
+        "legendFormat": "Errors",
+        "refId": "A"
+      }],
+      "title": "Errors / Fatals",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }] }, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 8, "y": 1 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+        "expr": "sum(count_over_time({service_namespace=~\"$namespace\", service_name=~\"$service\"} |~ \"(?i)\\\\bwarn(?:ing)?\\\\b\" [$__range]))",
+        "legendFormat": "Warnings",
+        "refId": "A"
+      }],
+      "title": "Warnings",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.01 }, { "color": "red", "value": 0.05 }] }, "unit": "percentunit", "decimals": 2 },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 12, "y": 1 },
+      "id": 5,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+        "expr": "sum(rate({service_namespace=~\"$namespace\", service_name=~\"$service\"} |~ \"(?i)\\\\berror\\\\b|\\\\bfatal\\\\b|\\\\bexception\\\\b\" [5m])) / sum(rate({service_namespace=~\"$namespace\", service_name=~\"$service\"} [5m]))",
+        "legendFormat": "Error Rate",
+        "refId": "A"
+      }],
+      "title": "Error Rate (5m)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }, "unit": "short", "noValue": "0" },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 16, "y": 1 },
+      "id": 6,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [{
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "expr": "count(probe_success{namespace=~\"$namespace\"} == 0) or vector(0)",
+        "instant": true,
+        "legendFormat": "Down",
+        "refId": "A"
+      }],
+      "title": "Containers Down",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }, "unit": "ms" },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 20, "y": 1 },
+      "id": 7,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "value" },
+      "targets": [{
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "expr": "avg(probe_duration_seconds{namespace=~\"$namespace\"}) * 1000",
+        "instant": true,
+        "legendFormat": "Avg Response",
+        "refId": "A"
+      }],
+      "title": "Avg Response Time",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 4 },
+      "id": 10,
+      "title": "Activity",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 1, "fillOpacity": 20, "stacking": { "mode": "normal", "group": "A" } }, "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "error/.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "warn/.*" },  "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 5 },
+      "id": 11,
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "calcs": ["sum", "max"], "displayMode": "table", "placement": "right" } },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "expr": "sum by (service_name) (rate({service_namespace=~\"$namespace\", service_name=~\"$service\"} |= \"$search\" [5m]))",
+          "legendFormat": "{{service_name}}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "expr": "sum by (service_name) (rate({service_namespace=~\"$namespace\", service_name=~\"$service\"} |~ \"(?i)\\\\berror\\\\b|\\\\bfatal\\\\b|\\\\bexception\\\\b\" [5m]))",
+          "legendFormat": "error/{{service_name}}",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "expr": "sum by (service_name) (rate({service_namespace=~\"$namespace\", service_name=~\"$service\"} |~ \"(?i)\\\\bwarn(?:ing)?\\\\b\" [5m]))",
+          "legendFormat": "warn/{{service_name}}",
+          "refId": "C"
+        }
+      ],
+      "title": "Log Rate by Service (lines/sec)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 5 },
+      "id": 12,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+        "expr": "{service_namespace=~\"$namespace\", service_name=~\"$service\"} |~ \"(?i)\\\\berror\\\\b|\\\\bfatal\\\\b|\\\\bexception\\\\b|\\\\bpanic\\\\b\"",
+        "legendFormat": "",
+        "refId": "A"
+      }],
+      "title": "Recent Errors",
+      "type": "logs"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "id": 20,
+      "title": "Log Explorer",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 14 },
+      "id": 21,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+        "expr": "{service_namespace=~\"$namespace\", service_name=~\"$service\"} |= \"$search\" $level_filter",
+        "legendFormat": "",
+        "refId": "A"
+      }],
+      "title": "All Logs — $namespace / $service",
+      "type": "logs"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 28 },
+      "id": 30,
+      "title": "Traces",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "jaeger", "uid": "${DS_JAEGER}" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 14, "w": 16, "x": 0, "y": 29 },
+      "id": 31,
+      "targets": [{
+        "datasource": { "type": "jaeger", "uid": "${DS_JAEGER}" },
+        "queryType": "search",
+        "service": "$service",
+        "minDuration": "$min_duration",
+        "refId": "A"
+      }],
+      "title": "Traces — $namespace / $service",
+      "type": "traces"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 1, "fillOpacity": 10 }, "unit": "reqps" },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 29 },
+      "id": 32,
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [{
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "expr": "sum by (receiver) (rate(otelcol_receiver_accepted_spans[5m]))",
+        "legendFormat": "{{receiver}}",
+        "refId": "A"
+      }],
+      "title": "Spans / sec (collector)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }, "unit": "short", "noValue": "0" },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 36 },
+      "id": 33,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [{
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "expr": "sum(increase(otelcol_exporter_send_failed_spans_total[5m]))",
+        "instant": true,
+        "legendFormat": "Dropped",
+        "refId": "A"
+      }],
+      "title": "Dropped Spans (5m)",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["observability", "logs", "traces", "namespace"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_LOKI",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_JAEGER",
+        "options": [],
+        "query": "jaeger",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": {},
+        "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+        "definition": "label_values({service_name=~\".+\"}, service_namespace)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Namespace",
+        "name": "namespace",
+        "options": [],
+        "query": "label_values({service_name=~\".+\"}, service_namespace)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".+",
+        "current": {},
+        "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+        "definition": "label_values({service_namespace=\"$namespace\"}, service_name)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Service",
+        "multi": true,
+        "name": "service",
+        "options": [],
+        "query": "label_values({service_namespace=\"$namespace\"}, service_name)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": { "value": "" },
+        "hide": 0,
+        "label": "Search",
+        "name": "search",
+        "options": [{ "selected": true, "text": "", "value": "" }],
+        "query": "",
+        "type": "textbox"
+      },
+      {
+        "current": { "value": "all", "text": "All" },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Level",
+        "name": "level_filter",
+        "options": [
+          { "selected": true, "text": "All",     "value": "" },
+          { "selected": false, "text": "Error",   "value": "|~ \"(?i)\\\\berror\\\\b|\\\\bfatal\\\\b|\\\\bexception\\\\b|\\\\bpanic\\\\b\"" },
+          { "selected": false, "text": "Warn",    "value": "|~ \"(?i)\\\\bwarn(?:ing)?\\\\b\"" },
+          { "selected": false, "text": "Info",    "value": "|~ \"(?i)\\\\binfo\\\\b\"" },
+          { "selected": false, "text": "Debug",   "value": "|~ \"(?i)\\\\bdebug\\\\b\"" }
+        ],
+        "query": "",
+        "type": "custom"
+      },
+      {
+        "current": { "value": "" },
+        "hide": 0,
+        "label": "Min Trace Duration",
+        "name": "min_duration",
+        "options": [{ "selected": true, "text": "", "value": "" }],
+        "query": "",
+        "description": "Filter traces longer than this (e.g. 100ms, 1s)",
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Observability — Namespace",
+  "uid": "obs-namespace",
+  "version": 2,
+  "weekStart": ""
+}

@@ -1,0 +1,379 @@
+{
+ "uid": "obs-project",
+ "title": "Project \u2014 overview (uptime, containers, logs)",
+ "tags": [
+  "observability",
+  "projects"
+ ],
+ "schemaVersion": 39,
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "refresh": "1m",
+ "templating": {
+  "list": [
+   {
+    "name": "project",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "prometheus"
+    },
+    "query": {
+     "query": "label_values(probe_success, project)",
+     "refId": "A"
+    },
+    "refresh": 2,
+    "current": {}
+   },
+   {
+    "name": "compose",
+    "label": "containers (compose project)",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "prometheus"
+    },
+    "query": {
+     "query": "label_values(otel_container_uptime_seconds, compose_project)",
+     "refId": "B"
+    },
+    "refresh": 2,
+    "multi": true,
+    "includeAll": false,
+    "current": {},
+    "description": "Pick the compose projects that make up this project (Trivialism staging = the-digital-local + supabase)."
+   },
+   {
+    "name": "search",
+    "type": "textbox",
+    "query": "",
+    "current": {
+     "value": ""
+    }
+   }
+  ]
+ },
+ "panels": [
+  {
+   "id": 1,
+   "title": "Uptime probes",
+   "type": "stat",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 5
+   },
+   "targets": [
+    {
+     "expr": "probe_success{project=\"$project\"}",
+     "legendFormat": "{{instance}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ],
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    }
+   }
+  },
+  {
+   "id": 2,
+   "title": "Probe latency",
+   "type": "timeseries",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 0,
+    "w": 12,
+    "h": 5
+   },
+   "targets": [
+    {
+     "expr": "probe_duration_seconds{project=\"$project\"}",
+     "legendFormat": "{{instance}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s"
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 3,
+   "title": "HTTP status (probe)",
+   "type": "timeseries",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 5,
+    "w": 12,
+    "h": 6
+   },
+   "targets": [
+    {
+     "expr": "probe_http_status_code{project=\"$project\"}",
+     "legendFormat": "{{instance}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "title": "Container restarts (1h)",
+   "type": "stat",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 5,
+    "w": 12,
+    "h": 6
+   },
+   "targets": [
+    {
+     "expr": "sum by (container_name) (increase(otel_container_restarts_total{compose_project=~\"$compose\"}[1h]))",
+     "legendFormat": "{{container_name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "title": "Container CPU",
+   "type": "timeseries",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 11,
+    "w": 12,
+    "h": 8
+   },
+   "targets": [
+    {
+     "expr": "sum by (container_name) (rate(otel_container_cpu_usage_nanoseconds_total{compose_project=~\"$compose\"}[5m])) / 1e9",
+     "legendFormat": "{{container_name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "cores"
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 6,
+   "title": "Container memory",
+   "type": "timeseries",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 11,
+    "w": 12,
+    "h": 8
+   },
+   "targets": [
+    {
+     "expr": "sum by (container_name) (otel_container_memory_usage_total_bytes{compose_project=~\"$compose\"})",
+     "legendFormat": "{{container_name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes"
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 7,
+   "title": "Log volume by service",
+   "type": "timeseries",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 19,
+    "w": 12,
+    "h": 8
+   },
+   "targets": [
+    {
+     "expr": "sum by (service_name) (count_over_time({service_namespace=~\"$compose\"}[1m]))",
+     "legendFormat": "{{service_name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "title": "Error-ish log lines",
+   "type": "timeseries",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 19,
+    "w": 12,
+    "h": 8
+   },
+   "targets": [
+    {
+     "expr": "sum by (service_name) (count_over_time({service_namespace=~\"$compose\"} |~ \"(?i)(error|exception|fatal|panic|traceback| 5[0-9][0-9] )\" [5m]))",
+     "legendFormat": "{{service_name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "title": "Recent errors",
+   "type": "logs",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 27,
+    "w": 24,
+    "h": 10
+   },
+   "targets": [
+    {
+     "expr": "{service_namespace=~\"$compose\"} |~ \"(?i)(error|exception|fatal|panic|traceback)\"",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "title": "All logs",
+   "type": "logs",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 37,
+    "w": 24,
+    "h": 12
+   },
+   "targets": [
+    {
+     "expr": "{service_namespace=~\"$compose\"} |~ \"$search\"",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ]
+  }
+ ]
+}

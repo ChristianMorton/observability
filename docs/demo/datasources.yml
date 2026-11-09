@@ -1,0 +1,7 @@
+apiVersion: 1
+datasources:
+  - name: Portfolio synthetic telemetry
+    uid: portfolio-testdata
+    type: grafana-testdata-datasource
+    access: proxy
+    isDefault: true

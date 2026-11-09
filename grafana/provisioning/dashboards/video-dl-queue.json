@@ -1,0 +1,238 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "description": "Live download queue, library stats, and user metrics for the video downloader",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "refresh": "15s",
+  "schemaVersion": 38,
+  "tags": ["video-downloader"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {},
+  "title": "Video Downloader — Queue & Stats",
+  "uid": "video-dl-queue",
+  "version": 1,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Live State",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 1 }
+          ]},
+          "unit": "short", "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_downloads_active", "instant": true, "legendFormat": "Active", "refId": "A" }],
+      "title": "Downloading Now",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 3 },
+            { "color": "orange", "value": 8 }
+          ]},
+          "unit": "short", "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_downloads_queued", "instant": true, "legendFormat": "Queued", "refId": "A" }],
+      "title": "Queue Depth",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "green", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short", "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_downloads_total{status=\"complete\"}", "instant": true, "legendFormat": "Completed", "refId": "A" }],
+      "title": "Total Completed",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 1 },
+            { "color": "red", "value": 10 }
+          ]},
+          "unit": "short", "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_downloads_total{status=\"failed\"}", "instant": true, "legendFormat": "Failed", "refId": "A" }],
+      "title": "Total Failed",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "purple", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] },
+          "unit": "short", "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_library_videos", "instant": true, "legendFormat": "Videos", "refId": "A" }],
+      "title": "Library Size",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "blue", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short", "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 6,
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_users_total", "instant": true, "legendFormat": "Users", "refId": "A" }],
+      "title": "Registered Users",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Over Time",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 15 }, "unit": "short", "min": 0 },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Active" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Queued" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 16, "x": 0, "y": 6 },
+      "id": 7,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_downloads_active", "legendFormat": "Active", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_downloads_queued", "legendFormat": "Queued", "refId": "B" }
+      ],
+      "title": "Queue Depth Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "min": 0 },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "complete" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "failed" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "queued" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "downloading" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 8, "x": 16, "y": 6 },
+      "id": 8,
+      "options": { "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }, "pieType": "donut", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_downloads_total", "instant": true, "legendFormat": "{{status}}", "refId": "A" }],
+      "title": "Downloads by Status",
+      "type": "piechart"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "id": 102,
+      "title": "Library",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 20 }, "color": { "fixedColor": "purple", "mode": "fixed" }, "unit": "short", "min": 0 },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 9,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_library_videos", "legendFormat": "Videos in library", "refId": "A" }],
+      "title": "Library Growth",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "short", "min": 0 },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Completed" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Failed" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 10,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_downloads_total{status=\"complete\"}", "legendFormat": "Completed", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "videodl_downloads_total{status=\"failed\"}", "legendFormat": "Failed", "refId": "B" }
+      ],
+      "title": "Cumulative Download Outcomes",
+      "type": "timeseries"
+    }
+  ]
+}

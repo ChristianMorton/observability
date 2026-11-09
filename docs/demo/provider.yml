@@ -1,0 +1,6 @@
+apiVersion: 1
+providers:
+  - name: Portfolio previews
+    type: file
+    options:
+      path: /demo

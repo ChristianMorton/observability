@@ -1,0 +1,338 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "description": "Unified view of all projects — one section per namespace, auto-populated from live data",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "Namespace Detail",
+      "type": "dashboard",
+      "url": "/d/obs-namespace",
+      "targetBlank": false,
+      "tooltip": "Open per-namespace dashboard"
+    }
+  ],
+  "panels": [
+    {
+      "datasource": null,
+      "gridPos": { "h": 22, "w": 24, "x": 0, "y": 0 },
+      "id": 200,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "## Integrate a project into this observability stack\n\nCopy the prompt below and give it to your AI agent:\n\n```\nYou are integrating a Docker Compose project into a shared observability stack.\n\nThe observability stack is already running on this host. Your job is to connect\nthis project to it by making the following changes to its docker-compose.yml:\n\n1. Declare the external observability network at the bottom of the file:\n\n   networks:\n     observability:\n       name: observability\n       external: true\n\n2. For every service that should be observed, add the observability network\n   and these labels (replace values as appropriate):\n\n   labels:\n     obs.service.name: \"<service-name>\"        # e.g. \"api\", \"worker\", \"frontend\"\n     obs.service.namespace: \"<project-name>\"   # e.g. \"my-app\" — groups services in dashboards\n\n   networks:\n     - <existing-network>   # keep whatever networks the service already uses\n     - observability\n\n3. If a service exposes a Prometheus /metrics endpoint, also add:\n\n     obs.scrape: \"true\"\n     obs.scrape.port: \"<port>\"    # port that serves /metrics (e.g. \"8080\")\n     obs.scrape.path: \"/metrics\" # omit if the path is already /metrics\n\n4. To send traces and structured logs via OpenTelemetry, set these env vars\n   on the service (SDK-agnostic — works with any OTel-instrumented app):\n\n     OTEL_EXPORTER_OTLP_ENDPOINT: \"http://otel-collector:4317\"\n     OTEL_EXPORTER_OTLP_PROTOCOL: \"grpc\"\n     OTEL_SERVICE_NAME: \"<service-name>\"\n     OTEL_RESOURCE_ATTRIBUTES: \"service.namespace=<project-name>\"\n\n5. Do NOT modify the observability stack itself (/opt/observability).\n   Do NOT add Loki, Jaeger, Prometheus, or Grafana to this project's compose file.\n\nAfter making these changes, run `docker compose up -d` in the project directory.\nThe project will appear automatically in the Grafana dashboard at\nhttp://localhost:3003/d/obs-projects within ~30 seconds.\n```\n\n---\n\n## Query observability data from your agent\n\nOnce connected, agents can also query the stack directly via MCP — no need to know the underlying APIs.\n\nAdd to `.mcp.json` in any project:\n\n```json\n{\n  \"mcpServers\": {\n    \"observability\": {\n      \"type\": \"http\",\n      \"url\": \"https://app.example.com/mcp\",\n      \"headers\": { \"Authorization\": \"Bearer __MCP_API_KEY__\" }\n    }\n  }\n}\n```\n\n| Tool | What it does |\n|------|--------------|\n| `list_projects` | All observed project namespaces |\n| `get_project_health(project)` | Log count, error rate, trace presence — last 1h |\n| `query_logs(project, search?)` | Search logs with optional text filter |\n| `get_recent_errors(project)` | Recent error/exception/fatal lines |\n| `query_metrics(promql)` | Raw PromQL query against Prometheus |\n| `get_traces(project)` | Recent Jaeger traces for a service |\n| `get_stack_health()` | Health of all 4 stack components |",
+        "mode": "markdown"
+      },
+      "title": "Agent Integration Prompt",
+      "type": "text"
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "id": 201,
+      "title": "▲ Hide integration prompt",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 100,
+      "repeat": "namespace",
+      "repeatDirection": "v",
+      "title": "Project: $namespace",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 24 },
+      "id": 1,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "expr": "{service_namespace=\"$namespace\"} !~ \"^\\\\s*$\" | line_format \"[{{.service_name}}] {{.__line__}}\"",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "$namespace — Recent Logs",
+      "type": "logs"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 1, "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 18 },
+      "id": 2,
+      "options": {
+        "legend": { "calcs": ["last"], "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "rate(otelcol_exporter_sent_spans{exporter=\"otlp_http/jaeger\"}[5m])",
+          "legendFormat": "collector total",
+          "refId": "A"
+        }
+      ],
+      "title": "$namespace — Traces / sec (collector-wide)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 1, "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 18 },
+      "id": 3,
+      "options": {
+        "legend": { "calcs": ["last"], "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "expr": "rate({service_namespace=\"$namespace\"}[5m])",
+          "legendFormat": "{{service_name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "$namespace — Log Records / sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 1, "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 18 },
+      "id": 4,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "rate(otelcol_exporter_sent_metric_points[5m])",
+          "legendFormat": "collector total",
+          "refId": "A"
+        }
+      ],
+      "title": "$namespace — Metric Points / sec (collector-wide)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 10 }
+            ]
+          },
+          "unit": "short",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 6, "x": 0, "y": 24 },
+      "id": 5,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(increase(otelcol_processor_dropped_spans_total[5m]))",
+          "legendFormat": "Dropped Spans",
+          "refId": "A"
+        }
+      ],
+      "title": "$namespace — Dropped Spans (5m)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 10 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 6, "x": 6, "y": 24 },
+      "id": 6,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(increase(otelcol_processor_dropped_log_records_total[5m]))",
+          "legendFormat": "Dropped Log Records",
+          "refId": "A"
+        }
+      ],
+      "title": "$namespace — Dropped Logs (5m)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 50 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 6, "x": 12, "y": 24 },
+      "id": 7,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "count(probe_success{namespace=\"$namespace\"} == 0) or vector(0)",
+          "legendFormat": "Down Targets",
+          "refId": "A"
+        }
+      ],
+      "title": "$namespace — Down Targets",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 6, "x": 18, "y": 24 },
+      "id": 8,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "count(probe_success{namespace=\"$namespace\"}) or vector(0)",
+          "legendFormat": "Active Targets",
+          "refId": "A"
+        }
+      ],
+      "title": "$namespace — Active Targets",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["observability", "projects", "unified"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_LOKI",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": { "value": ["$__all"] },
+        "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+        "definition": "label_values(service_namespace)",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": ".*",
+        "label": "Projects",
+        "multi": true,
+        "name": "namespace",
+        "options": [],
+        "query": "label_values(service_namespace)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Observability — All Projects",
+  "uid": "obs-projects",
+  "version": 1
+}

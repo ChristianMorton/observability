@@ -1,0 +1,48 @@
+# E2E integration test — simulates a project opting in to the observability stack.
+# Run AFTER the main stack is up: ./obs.sh up -d
+#
+# Usage:
+#   docker compose -f tests/docker-compose.test.yml up -d
+#   docker compose -f tests/docker-compose.test.yml down -v
+
+networks:
+  # Join the shared observability network
+  observability:
+    name: observability
+    external: true
+  # Isolated test network (simulates the project's own network)
+  testnet:
+    driver: bridge
+
+services:
+  # A minimal HTTP service that emits OTLP traces + exposes /metrics
+  trivia-web:
+    image: otel/opentelemetry-collector-contrib:0.115.0
+    # We reuse the collector image as a stand-in that can emit OTLP to itself.
+    # In a real project this would be your application container.
+    command: ["--config=/etc/otelcol-contrib/test-config.yaml"]
+    volumes:
+      - ./test-otel-emitter.yaml:/etc/otelcol-contrib/test-config.yaml:ro
+    labels:
+      obs.service.name: "trivia-web"
+      obs.service.namespace: "trivia-bot"
+      obs.scrape: "true"
+      obs.scrape.port: "8888"
+      obs.scrape.path: "/metrics"
+    networks:
+      - observability
+      - testnet
+    ports:
+      - "127.0.0.1:8888:8888"   # Prometheus metrics (scraped by Prometheus)
+
+  # Smoke-test runner: queries each backend and exits 0 on success
+  smoke-test:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      - trivia-web
+    networks:
+      - observability
+    entrypoint: ["/bin/sh", "/smoke-test.sh"]
+    volumes:
+      - ./smoke-test.sh:/smoke-test.sh:ro
+    restart: "no"

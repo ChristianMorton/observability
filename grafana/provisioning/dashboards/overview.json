@@ -1,0 +1,170 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "description": "Cross-project overview: logs, traces, and metrics across all services",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Logs",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 1 },
+      "id": 2,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "expr": "{service_namespace=~\".+\"} |= \"\"",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "All Services — Recent Logs",
+      "type": "logs"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 3,
+      "title": "Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 1 } },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "id": 4,
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "rate(otelcol_receiver_accepted_spans[5m])",
+          "legendFormat": "{{receiver}}",
+          "refId": "A"
+        }
+      ],
+      "title": "OTel Collector — Received Spans/sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 1 } },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "id": 5,
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "rate(otelcol_exporter_sent_spans[5m])",
+          "legendFormat": "{{exporter}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Traces Exported / sec",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "id": 6,
+      "title": "OTel Collector Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 19 },
+      "id": 7,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(increase(otelcol_processor_dropped_spans_total[5m]))",
+          "legendFormat": "Dropped Spans",
+          "refId": "A"
+        }
+      ],
+      "title": "Dropped Spans",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 19 },
+      "id": 8,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(increase(otelcol_processor_dropped_log_records_total[5m]))",
+          "legendFormat": "Dropped Log Records",
+          "refId": "A"
+        }
+      ],
+      "title": "Dropped Log Records",
+      "type": "stat"
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["observability", "overview"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_LOKI",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Observability — Overview",
+  "uid": "obs-overview",
+  "version": 1
+}

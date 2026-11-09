@@ -1,0 +1,150 @@
+# OTel Collector — per-user SATELLITE config (hub, 2026-10).
+#
+# Every hub user (hub, staging, apps, ...) runs its own ROOTLESS Docker daemon, so
+# the main collector (in the `analytics` user's daemon) cannot see their sockets or
+# log files. One small satellite runs inside each user's daemon and forwards over
+# the tailnet to the main collector at 192.0.2.10:50317 (also used on prod).
+#
+#   container stdout (all containers) ─┐
+#   docker_stats (cpu/mem/net/blkio)  ─┼─> satellite ──otlp/tailnet──> analytics otel-collector
+#   app OTLP push (otel-collector:4317)┘                                 ├─> Loki / Jaeger / Prometheus
+#
+# Container logs come from the alloy sidecar (alloy-satellite.alloy) via the loki
+# receiver: every container, no obs.* labels needed.
+# service.namespace = obs.service.namespace label > compose project > container name
+# service.name      = obs.service.name label > compose service > container name
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  file_storage:
+    directory: /var/lib/otelcol/file_storage
+    timeout: 10s
+    create_directory: true
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Per-container resource metrics (container.cpu.*, container.memory.*, ...)
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    collection_interval: 30s
+    api_version: "1.44"
+    container_labels_to_metric_labels:
+      com.docker.compose.project: compose_project
+      com.docker.compose.service: compose_service
+    metrics:
+      container.uptime:
+        enabled: true
+      container.restarts:
+        enabled: true
+
+  # Container logs, pushed by the alloy log shipper next to this collector.
+  loki:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:3500
+    use_incoming_timestamp: true
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 192
+
+  batch:
+    timeout: 2s
+    send_batch_size: 1024
+
+  # Loki labels arrive as log-record attributes; lift them to the resource so
+  # Loki indexes them (service_name, service_namespace, ...).
+  groupbyattrs/loki:
+    keys: [service_name, service_namespace, container, host_name, deployment_environment, stream]
+
+  transform/loki:
+    error_mode: ignore
+    log_statements:
+      - context: resource
+        statements:
+          - set(resource.attributes["service.name"], resource.attributes["service_name"]) where resource.attributes["service_name"] != nil
+          - set(resource.attributes["service.namespace"], resource.attributes["service_namespace"]) where resource.attributes["service_namespace"] != nil
+          - set(resource.attributes["container.name"], resource.attributes["container"]) where resource.attributes["container"] != nil
+          - delete_key(resource.attributes, "service_name")
+          - delete_key(resource.attributes, "service_namespace")
+          - delete_key(resource.attributes, "container")
+          - delete_key(resource.attributes, "host_name")
+          - delete_key(resource.attributes, "deployment_environment")
+
+  # Which hub user / host the signal came from. Set per deployment.
+  resource/host:
+    attributes:
+      - key: host.name
+        value: ${env:SAT_HOST}
+        action: upsert
+      - key: deployment.environment
+        value: ${env:SAT_ENV}
+        action: upsert
+
+  transform/labels:
+    error_mode: ignore
+    log_statements:
+      - context: resource
+        statements:
+          - set(resource.attributes["service.name"], resource.attributes["obs.service.name"]) where resource.attributes["obs.service.name"] != nil
+          - set(resource.attributes["service.namespace"], resource.attributes["obs.service.namespace"]) where resource.attributes["obs.service.namespace"] != nil
+      - context: log
+        statements:
+          - delete_key(attributes, "__error__")
+          - delete_key(attributes, "__error_details__")
+    trace_statements:
+      - context: resource
+        statements:
+          - set(resource.attributes["service.name"], resource.attributes["obs.service.name"]) where resource.attributes["obs.service.name"] != nil
+          - set(resource.attributes["service.namespace"], resource.attributes["obs.service.namespace"]) where resource.attributes["obs.service.namespace"] != nil
+
+exporters:
+  # Tailnet only: OTLP here is unauthenticated plaintext inside WireGuard.
+  otlp_grpc/hub:
+    endpoint: ${env:HUB_OTLP_ENDPOINT}
+    tls:
+      insecure: true
+    retry_on_failure:
+      enabled: true
+      max_elapsed_time: 900s
+    sending_queue:
+      enabled: true
+      storage: file_storage
+      num_consumers: 4
+      queue_size: 5000
+
+service:
+  telemetry:
+    metrics:
+      level: basic
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+  extensions: [health_check, file_storage]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/labels, resource/host, batch]
+      exporters: [otlp_grpc/hub]
+    metrics:
+      receivers: [otlp, docker_stats]
+      processors: [memory_limiter, resource/host, batch]
+      exporters: [otlp_grpc/hub]
+    logs/otlp:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/labels, resource/host, batch]
+      exporters: [otlp_grpc/hub]
+    logs/containers:
+      receivers: [loki]
+      processors: [memory_limiter, groupbyattrs/loki, transform/loki, resource/host, batch]
+      exporters: [otlp_grpc/hub]

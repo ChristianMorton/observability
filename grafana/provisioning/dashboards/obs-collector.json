@@ -1,0 +1,408 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "description": "OTel Collector self-telemetry: signal throughput, queue depth, drops, and process health",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "value" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "otelcol_process_uptime",
+          "instant": true,
+          "legendFormat": "Uptime",
+          "refId": "A"
+        }
+      ],
+      "title": "Collector Uptime",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 4, "y": 1 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "value" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(rate(otelcol_receiver_accepted_spans[5m]))",
+          "legendFormat": "Spans/s",
+          "refId": "A"
+        }
+      ],
+      "title": "Received Spans/sec",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 9, "y": 1 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "value" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(rate(otelcol_receiver_accepted_log_records[5m]))",
+          "legendFormat": "Logs/s",
+          "refId": "A"
+        }
+      ],
+      "title": "Received Log Records/sec",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 14, "y": 1 },
+      "id": 5,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(otelcol_exporter_queue_size)",
+          "instant": true,
+          "legendFormat": "Queue",
+          "refId": "A"
+        }
+      ],
+      "title": "Exporter Queue Depth",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 19, "y": 1 },
+      "id": 6,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(increase(otelcol_processor_dropped_spans_total[5m])) + sum(increase(otelcol_processor_dropped_log_records_total[5m])) + sum(increase(otelcol_processor_dropped_metric_points_total[5m]))",
+          "instant": true,
+          "legendFormat": "Dropped",
+          "refId": "A"
+        }
+      ],
+      "title": "Dropped Signals (5m)",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 10,
+      "title": "Signal Flow — Received vs Exported",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 2, "fillOpacity": 5 }, "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*failed.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }, { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 6 },
+      "id": 11,
+      "options": {
+        "legend": { "calcs": ["mean", "last"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (receiver) (rate(otelcol_receiver_accepted_spans[5m]))",
+          "legendFormat": "recv/{{receiver}}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (exporter) (rate(otelcol_exporter_sent_spans[5m]))",
+          "legendFormat": "sent/{{exporter}}",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (exporter) (rate(otelcol_exporter_send_failed_spans_total[5m]))",
+          "legendFormat": "failed/{{exporter}}",
+          "refId": "C"
+        }
+      ],
+      "title": "Spans",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 2, "fillOpacity": 5 }, "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*failed.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }, { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 6 },
+      "id": 12,
+      "options": {
+        "legend": { "calcs": ["mean", "last"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (receiver) (rate(otelcol_receiver_accepted_log_records[5m]))",
+          "legendFormat": "recv/{{receiver}}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (exporter) (rate(otelcol_exporter_sent_log_records[5m]))",
+          "legendFormat": "sent/{{exporter}}",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (exporter) (rate(otelcol_exporter_send_failed_log_records[5m]))",
+          "legendFormat": "failed/{{exporter}}",
+          "refId": "C"
+        }
+      ],
+      "title": "Log Records",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 2, "fillOpacity": 5 }, "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*failed.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }, { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 6 },
+      "id": 13,
+      "options": {
+        "legend": { "calcs": ["mean", "last"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (receiver) (rate(otelcol_receiver_accepted_metric_points[5m]))",
+          "legendFormat": "recv/{{receiver}}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (exporter) (rate(otelcol_exporter_sent_metric_points[5m]))",
+          "legendFormat": "sent/{{exporter}}",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (exporter) (rate(otelcol_exporter_send_failed_metric_points_total[5m]))",
+          "legendFormat": "failed/{{exporter}}",
+          "refId": "C"
+        }
+      ],
+      "title": "Metric Points",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 20,
+      "title": "Queue & Drops",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "short", "min": 0 },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 21,
+      "options": {
+        "legend": { "calcs": ["max", "last"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "otelcol_exporter_queue_size",
+          "legendFormat": "{{exporter}}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "otelcol_exporter_queue_capacity",
+          "legendFormat": "capacity/{{exporter}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Exporter Queue Size vs Capacity",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "short", "min": 0 },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 22,
+      "options": {
+        "legend": { "calcs": ["sum", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (processor) (rate(otelcol_processor_dropped_spans_total[5m]))",
+          "legendFormat": "spans/{{processor}}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (processor) (rate(otelcol_processor_dropped_log_records_total[5m]))",
+          "legendFormat": "logs/{{processor}}",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (processor) (rate(otelcol_processor_dropped_metric_points_total[5m]))",
+          "legendFormat": "metrics/{{processor}}",
+          "refId": "C"
+        }
+      ],
+      "title": "Dropped Signals Rate",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 30,
+      "title": "Process Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "bytes", "min": 0 },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 24 },
+      "id": 31,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "last"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "otelcol_process_memory_rss",
+          "legendFormat": "RSS Memory",
+          "refId": "A"
+        }
+      ],
+      "title": "Process Memory (RSS)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "percentunit", "min": 0 },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 24 },
+      "id": 32,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "last"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "rate(otelcol_process_cpu_seconds[5m])",
+          "legendFormat": "CPU",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU Usage",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["observability", "otelcol", "internal"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Observability — OTel Collector",
+  "uid": "obs-collector",
+  "version": 1
+}

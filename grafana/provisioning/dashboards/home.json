@@ -1,0 +1,402 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "description": "At-a-glance health and activity across the entire observability stack",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "title": "Service Health", "url": "/d/obs-health",     "type": "link", "icon": "heart",        "tooltip": "HTTP probe uptime per service", "targetBlank": false },
+    { "title": "Host",           "url": "/d/obs-host",       "type": "link", "icon": "monitor",      "tooltip": "CPU, memory, disk, network",    "targetBlank": false },
+    { "title": "Logs",           "url": "/d/obs-logs",       "type": "link", "icon": "gf-logs",      "tooltip": "Log volume and error analysis", "targetBlank": false },
+    { "title": "OTel Collector", "url": "/d/obs-collector",  "type": "link", "icon": "cog",          "tooltip": "Signal pipeline and queues",    "targetBlank": false },
+    { "title": "Projects",       "url": "/d/obs-projects",   "type": "link", "icon": "apps",         "tooltip": "Per-namespace breakdown",       "targetBlank": false }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "At a Glance",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 0, "y": 1 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "count(probe_success == 1) or vector(0)",
+          "instant": true,
+          "legendFormat": "Up",
+          "refId": "A"
+        }
+      ],
+      "title": "Containers Up",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 4, "y": 1 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "count(probe_success == 0) or vector(0)",
+          "instant": true,
+          "legendFormat": "Down",
+          "refId": "A"
+        }
+      ],
+      "title": "Containers Down",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 }] },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 8, "y": 1 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "instant": true,
+          "legendFormat": "CPU",
+          "refId": "A"
+        }
+      ],
+      "title": "Host CPU",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 }] },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 12, "y": 1 },
+      "id": 5,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))",
+          "instant": true,
+          "legendFormat": "Memory",
+          "refId": "A"
+        }
+      ],
+      "title": "Host Memory",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 80 }, { "color": "red", "value": 95 }] },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 16, "y": 1 },
+      "id": 6,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "100 - (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"rootfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"rootfs\"} * 100)",
+          "instant": true,
+          "legendFormat": "Disk",
+          "refId": "A"
+        }
+      ],
+      "title": "Host Disk /",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 20, "y": 1 },
+      "id": 7,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "value" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "otelcol_process_uptime",
+          "instant": true,
+          "legendFormat": "OTel",
+          "refId": "A"
+        }
+      ],
+      "title": "Collector Uptime",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 4 },
+      "id": 10,
+      "title": "Service Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "left" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Up" },
+            "properties": [
+              { "id": "mappings", "value": [{ "type": "value", "options": { "1": { "text": "UP", "color": "green" }, "0": { "text": "DOWN", "color": "red" } } }] },
+              { "id": "custom.displayMode", "value": "color-background" },
+              { "id": "custom.width", "value": 80 }
+            ]
+          },
+          { "matcher": { "id": "byName", "options": "Response (ms)" }, "properties": [{ "id": "unit", "value": "ms" }, { "id": "custom.width", "value": 110 }] },
+          { "matcher": { "id": "byName", "options": "HTTP" }, "properties": [
+            { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 200 }, { "color": "yellow", "value": 300 }, { "color": "red", "value": 400 }] } },
+            { "id": "custom.displayMode", "value": "color-background" },
+            { "id": "custom.width", "value": 70 }
+          ]},
+          { "matcher": { "id": "byName", "options": "Namespace" }, "properties": [{ "id": "custom.width", "value": 120 }] },
+          { "matcher": { "id": "byName", "options": "Service" }, "properties": [{ "id": "custom.width", "value": 160 }] }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 5 },
+      "id": 11,
+      "options": {
+        "sortBy": [{ "displayName": "Up", "desc": false }],
+        "frameIndex": 0,
+        "showHeader": true
+      },
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": { "Value #A": "Up", "Value #B": "Response (ms)", "Value #C": "HTTP", "job": "Service", "namespace": "Namespace", "instance": "Endpoint" },
+            "indexByName": { "Namespace": 0, "Service": 1, "Up": 2, "HTTP": 3, "Response (ms)": 4, "Endpoint": 5 }
+          }
+        }
+      ],
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "probe_success",
+          "instant": true,
+          "format": "table",
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "probe_duration_seconds * 1000",
+          "instant": true,
+          "format": "table",
+          "legendFormat": "",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "probe_http_status_code",
+          "instant": true,
+          "format": "table",
+          "legendFormat": "",
+          "refId": "C"
+        }
+      ],
+      "title": "Service Status",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 20,
+      "title": "Signal Activity",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 1, "fillOpacity": 10 }, "unit": "reqps" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 15 },
+      "id": 21,
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (receiver) (rate(otelcol_receiver_accepted_log_records[5m]))",
+          "legendFormat": "{{receiver}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Log Records / sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 1, "fillOpacity": 10 }, "unit": "reqps" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 15 },
+      "id": 22,
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (receiver) (rate(otelcol_receiver_accepted_spans[5m]))",
+          "legendFormat": "{{receiver}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Spans / sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 1, "fillOpacity": 10 }, "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Queue" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Dropped (5m)" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 },
+      "id": 23,
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(otelcol_exporter_queue_size)",
+          "legendFormat": "Queue",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(increase(otelcol_exporter_send_failed_log_records[5m])) + sum(increase(otelcol_exporter_send_failed_spans_total[5m]))",
+          "legendFormat": "Dropped (5m)",
+          "refId": "B"
+        }
+      ],
+      "title": "OTel Queue & Drops",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 30,
+      "title": "Recent Errors",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 24 },
+      "id": 31,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "expr": "{service_namespace=~\".+\"} |~ `(?i)(\"level\"\\s*:\\s*\"(error|fatal|panic|critical)\"|\\blevel\\s*=\\s*\"?(error|fatal|panic|critical)|\\[(error|fatal|panic|crit)\\]|\\]\\s*(error|fatal|panic|critical)\\b)`",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Errors & Exceptions (all services)",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["observability", "home", "overview"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_LOKI",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Observability — Home",
+  "uid": "obs-home",
+  "version": 1,
+  "weekStart": ""
+}

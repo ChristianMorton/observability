@@ -1,0 +1,294 @@
+{
+ "uid": "obs-alerts",
+ "title": "Alerts & uptime",
+ "tags": [
+  "observability",
+  "alerts"
+ ],
+ "schemaVersion": 39,
+ "time": {
+  "from": "now-24h",
+  "to": "now"
+ },
+ "refresh": "1m",
+ "templating": {
+  "list": []
+ },
+ "panels": [
+  {
+   "id": 1,
+   "title": "Firing alerts",
+   "type": "table",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 8
+   },
+   "targets": [
+    {
+     "expr": "ALERTS{alertstate=\"firing\"}",
+     "format": "table",
+     "instant": true,
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "title": "All public sites",
+   "type": "stat",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 8,
+    "w": 24,
+    "h": 6
+   },
+   "targets": [
+    {
+     "expr": "probe_success{job=\"blackbox-public\"}",
+     "legendFormat": "{{instance}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ],
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    }
+   }
+  },
+  {
+   "id": 3,
+   "title": "Tailnet services",
+   "type": "stat",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 14,
+    "w": 24,
+    "h": 4
+   },
+   "targets": [
+    {
+     "expr": "probe_success{job=\"blackbox-tailnet\"}",
+     "legendFormat": "{{instance}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ],
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    }
+   }
+  },
+  {
+   "id": 4,
+   "title": "Disk free %",
+   "type": "bargauge",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 18,
+    "w": 12,
+    "h": 9
+   },
+   "targets": [
+    {
+     "expr": "100*node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs|fuse.*\"}/node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs|fuse.*\"}",
+     "legendFormat": "{{job}} {{mountpoint}}",
+     "instant": true,
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "min": 0,
+     "max": 100,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 10
+       },
+       {
+        "color": "green",
+        "value": 25
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 5,
+   "title": "Memory available %",
+   "type": "timeseries",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 18,
+    "w": 12,
+    "h": 9
+   },
+   "targets": [
+    {
+     "expr": "100*node_memory_MemAvailable_bytes/node_memory_MemTotal_bytes",
+     "legendFormat": "{{job}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent"
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 6,
+   "title": "Alert history",
+   "type": "timeseries",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 27,
+    "w": 24,
+    "h": 8
+   },
+   "targets": [
+    {
+     "expr": "sum by (alertname) (ALERTS{alertstate=\"firing\"})",
+     "legendFormat": "{{alertname}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ]
+  }
+ ]
+}

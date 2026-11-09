@@ -1,0 +1,48 @@
+service:
+  # Expose internal metrics for the Prometheus `jaeger` scrape job (jaeger:8888).
+  telemetry:
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+  extensions: [jaeger_storage, jaeger_query]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [jaeger_storage_exporter]
+
+extensions:
+  jaeger_storage:
+    backends:
+      main_store:
+        badger:
+          directories:
+            keys: /badger/key
+            values: /badger/data
+          ephemeral: false
+          ttl:
+            spans: 168h  # 7 days
+
+  jaeger_query:
+    storage:
+      traces: main_store
+    http:
+      endpoint: "0.0.0.0:16686"
+    grpc:
+      endpoint: "0.0.0.0:16685"
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+exporters:
+  jaeger_storage_exporter:
+    trace_storage: main_store

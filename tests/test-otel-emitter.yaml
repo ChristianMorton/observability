@@ -1,0 +1,67 @@
+# Minimal OTel Collector config used by the trivia-web test service.
+# Generates synthetic traces/metrics/logs and forwards them to the
+# main stack's otel-collector.
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  # Synthetic load generator — produces traces, metrics, and logs
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Expose Prometheus metrics endpoint for scraping
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: trivia-web-self
+          scrape_interval: 15s
+          static_configs:
+            - targets: ["0.0.0.0:8888"]
+
+exporters:
+  # Forward everything to the main otel-collector on the shared network
+  otlp:
+    endpoint: otel-collector:4317
+    tls:
+      insecure: true
+
+  # Expose /metrics for Prometheus scraping by the main stack
+  prometheus:
+    endpoint: 0.0.0.0:8888
+    namespace: trivia_web
+
+  debug:
+    verbosity: basic
+
+processors:
+  batch: {}
+  resource:
+    attributes:
+      - key: service.name
+        value: trivia-web
+        action: upsert
+      - key: service.namespace
+        value: trivia-bot
+        action: upsert
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource, batch]
+      exporters: [otlp]
+    metrics:
+      receivers: [otlp]
+      processors: [resource, batch]
+      exporters: [otlp, prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [resource, batch]
+      exporters: [otlp]

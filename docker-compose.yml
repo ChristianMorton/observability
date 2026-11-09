@@ -1,0 +1,154 @@
+networks:
+  observability:
+    name: observability
+    driver: bridge
+
+volumes:
+  obs_loki-data:
+  obs_prometheus-data:
+  obs_jaeger-data:
+  obs_grafana-data:
+  obs_otelcol-storage:
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.149.0
+    restart: unless-stopped
+    user: "0"
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - obs_otelcol-storage:/var/lib/otelcol/file_storage
+    ports:
+      - "127.0.0.1:4317:4317"   # OTLP gRPC
+      - "127.0.0.1:4318:4318"   # OTLP HTTP
+      - "127.0.0.1:8889:8889"   # Prometheus metrics exporter
+      - "127.0.0.1:13133:13133" # Health check
+    networks:
+      - observability
+    depends_on:
+      loki:
+        condition: service_started
+      jaeger:
+        condition: service_started
+
+  loki:
+    image: grafana/loki:3.2.1
+    restart: unless-stopped
+    user: "0"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/config.yaml:ro
+      - obs_loki-data:/loki/data
+    ports:
+      - "127.0.0.1:3100:3100"
+    command: -config.file=/etc/loki/config.yaml
+    networks:
+      - observability
+
+  jaeger:
+    image: jaegertracing/jaeger:2.17.0
+    restart: unless-stopped
+    user: "0"
+    volumes:
+      - ./jaeger-config.yaml:/jaeger/config.yaml:ro
+      - obs_jaeger-data:/badger
+    command: ["--config", "/jaeger/config.yaml"]
+    ports:
+      - "127.0.0.1:16686:16686"  # Jaeger UI
+      - "127.0.0.1:14317:4317"   # OTLP gRPC (offset to avoid conflict with otel-collector)
+      - "127.0.0.1:14318:4318"   # OTLP HTTP (offset to avoid conflict with otel-collector)
+    networks:
+      - observability
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    restart: unless-stopped
+    user: "0"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-rules:/etc/prometheus/rules:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - obs_prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
+    networks:
+      - observability
+
+  mcp-server:
+    build: ./mcp-server
+    restart: unless-stopped
+    environment:
+      PROMETHEUS_URL: http://prometheus:9090
+      LOKI_URL: http://loki:3100
+      JAEGER_URL: http://jaeger:16686
+      MCP_API_KEY: ${MCP_API_KEY:?Set MCP_API_KEY in .env}
+      MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-}
+      # Allowlist for the UNAUTHENTICATED /public/health endpoint, as
+      # "namespace:Display Name" pairs. Anything not listed here is never
+      # published, and an empty value publishes nothing at all. The namespace
+      # stays server-side; only the label is exposed.
+      PUBLIC_PROJECTS: ${PUBLIC_PROJECTS:-}
+      PUBLIC_CACHE_TTL: ${PUBLIC_CACHE_TTL:-60}
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - observability
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - observability
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    restart: unless-stopped
+    volumes:
+      - ./blackbox-exporter.yml:/etc/blackbox_exporter/config.yml:ro
+    networks:
+      - observability
+
+  grafana:
+    image: grafana/grafana:11.3.1
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_SECRET_KEY: ${GF_SECURITY_SECRET_KEY:?Set GF_SECURITY_SECRET_KEY in .env}
+      GF_SERVER_HTTP_PORT: ${GRAFANA_PORT:-3003}
+      # Require login — no anonymous access
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_BASIC_ENABLED: "true"
+      GF_AUTH_DISABLE_LOGIN_FORM: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/provisioning/dashboards/home.json
+    volumes:
+      - obs_grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3003}:${GRAFANA_PORT:-3003}"
+    networks:
+      - observability
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
